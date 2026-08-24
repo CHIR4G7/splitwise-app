@@ -1,0 +1,9 @@
+alter table public.profiles enable row level security;
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
+alter table public.invites enable row level security;
+alter table public.categories enable row level security;
+alter table public.expenses enable row level security;
+alter table public.expense_payers enable row level security;
+alter table public.expense_shares enable row level security;
+alter table public.settlements enable row level security;
