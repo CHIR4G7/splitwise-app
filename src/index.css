@@ -3,11 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Tells the browser to render native controls dark: date pickers, checkboxes,
+       select popups, scrollbars and form autofill all follow this. */
+    color-scheme: dark;
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
+    background-color: theme("colors.slate.50");
   }
 
   body {
     @apply bg-slate-50 font-sans text-slate-900 antialiased;
+  }
+
+  /* The date input's calendar glyph is drawn by the UA in near-black; without this it
+     disappears against the dark field. */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.75);
+    cursor: pointer;
+  }
+
+  ::selection {
+    background-color: theme("colors.brand.600");
+    color: #fff;
   }
 }

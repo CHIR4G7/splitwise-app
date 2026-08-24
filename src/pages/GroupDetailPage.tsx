@@ -110,7 +110,7 @@ export function GroupDetailPage() {
             onClick={() => setTab(value)}
             className={clsx(
               "flex-1 rounded-md py-2 text-sm font-medium capitalize transition",
-              tab === value ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-800"
+              tab === value ? "bg-card text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-800"
             )}
           >
             {value}

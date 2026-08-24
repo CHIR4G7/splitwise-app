@@ -166,7 +166,7 @@ export function AddExpensePage() {
                   className={
                     method === option.value
                       ? "rounded-lg border-2 border-brand-600 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-800"
-                      : "rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                      : "rounded-lg border border-slate-300 bg-card px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
                   }
                 >
                   {option.label}

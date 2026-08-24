@@ -76,7 +76,7 @@ export function GroupsPage() {
                     className={
                       icon === option
                         ? "h-10 w-10 rounded-lg border-2 border-brand-600 bg-brand-50 text-lg"
-                        : "h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg hover:bg-slate-50"
+                        : "h-10 w-10 rounded-lg border border-slate-300 bg-card text-lg hover:bg-slate-50"
                     }
                   >
                     {option}
@@ -122,7 +122,7 @@ export function GroupsPage() {
           <li key={group.id}>
             <Link
               to={`/groups/${group.id}`}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-300 hover:shadow"
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-card p-4 shadow-sm transition hover:border-brand-300 hover:shadow"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xl">
                 {group.icon}

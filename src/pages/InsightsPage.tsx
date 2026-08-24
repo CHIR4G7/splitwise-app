@@ -50,7 +50,7 @@ export function InsightsPage() {
                 "rounded-full px-3 py-1.5 text-sm transition",
                 preset === option.id
                   ? "bg-brand-600 text-white"
-                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  : "border border-slate-300 bg-card text-slate-700 hover:bg-slate-50"
               )}
             >
               {option.label}

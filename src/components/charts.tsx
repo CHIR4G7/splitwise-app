@@ -119,7 +119,7 @@ export function StatTile({
   emphasis?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
+    <div className="rounded-xl border border-slate-200 bg-card p-3">
       <p className="text-xs text-slate-500">{label}</p>
       <p
         className={

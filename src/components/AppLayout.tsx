@@ -14,7 +14,7 @@ export function AppLayout() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-24 pt-6">
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-card/95 backdrop-blur">
         <ul className="mx-auto flex max-w-2xl">
           {tabs.map(({ to, label, icon: Icon }) => (
             <li key={to} className="flex-1">

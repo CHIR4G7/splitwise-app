@@ -36,7 +36,7 @@ export function JoinGroupPage() {
     <AuthLayout title="You're invited" subtitle="Join the group to start splitting expenses together.">
       <div className="flex flex-col gap-5">
         <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-2xl">
+          <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-card text-2xl">
             {invite.group_icon}
           </span>
           <div className="min-w-0">
