@@ -11,7 +11,11 @@ export const supabase = createClient(url ?? "", anonKey ?? "", {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // PKCE, not the v2 default implicit flow: implicit returns the real access and refresh
+    // tokens in the URL fragment, where they end up in history, screenshots and referrers.
+    // PKCE returns a single-use code that is exchanged for the session instead.
+    flowType: "pkce"
   }
 });
 
