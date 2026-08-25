@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { InstallCard } from "@/components/InstallCard";
 import { Alert, Avatar, Button, Card, Field, SelectField, Spinner } from "@/components/ui";
 import { signOut, useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -59,6 +60,8 @@ export function ProfilePage() {
           </Button>
         </form>
       </Card>
+
+      <InstallCard />
 
       <Button variant="secondary" onClick={() => signOut()}>
         Sign out

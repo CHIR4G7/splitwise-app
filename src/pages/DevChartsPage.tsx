@@ -1,3 +1,4 @@
+import { InstallCard } from "@/components/InstallCard";
 import { MonthlyBars, RankedBars, StatTile } from "@/components/charts";
 import { Card } from "@/components/ui";
 
@@ -10,7 +11,9 @@ export function DevChartsPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-      <h1 className="text-xl font-semibold text-slate-900">Chart harness (dev only)</h1>
+      <h1 className="text-xl font-semibold text-slate-900">Component harness (dev only)</h1>
+
+      <InstallCard />
 
       <div className="grid grid-cols-2 gap-3">
         <StatTile label="Your share" valueMinor={4823750} currency={currency} emphasis />
