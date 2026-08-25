@@ -1,7 +1,11 @@
-// Minimal app-shell service worker. Phase 4 replaces this with vite-plugin-pwa
-// (precache manifest + background sync for offline expense writes).
+// App-shell service worker.
+//
+// Precaching a fixed list isn't enough: the JS/CSS filenames are content-hashed at build time,
+// so they can't be named here. Without runtime caching the shell loads offline and then fails
+// to fetch its own bundle — a blank screen. Hashed assets are immutable, so they're cached
+// on first use and served cache-first from then on.
 
-const CACHE = "splitit-shell-v1";
+const CACHE = "splitit-shell-v2";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -11,10 +15,20 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
+
+function isImmutableAsset(url) {
+  return (
+    url.pathname.startsWith("/assets/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname === "/manifest.webmanifest"
+  );
+}
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -23,11 +37,28 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Navigations fall back to the cached shell so the SPA still boots offline.
+  // Navigations: network first so a deploy is picked up promptly, cached shell when offline.
+  // Every client-side route resolves to index.html, same as the host's SPA rewrite.
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
+    event.respondWith(
+      fetch(request).catch(() => caches.match("/index.html").then((cached) => cached ?? Response.error()))
+    );
     return;
   }
 
-  event.respondWith(caches.match(request).then((cached) => cached ?? fetch(request)));
+  if (!isImmutableAsset(url)) return;
+
+  // Hashed assets never change under a given URL, so cache-first is safe and fastest.
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
+        if (response.ok && response.type === "basic") {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      });
+    })
+  );
 });
