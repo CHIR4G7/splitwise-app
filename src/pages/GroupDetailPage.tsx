@@ -12,6 +12,7 @@ import {
 } from "@/features/expenses/api";
 import { useGroup, useGroupMembers } from "@/features/groups/api";
 import { useAuth } from "@/lib/auth";
+import { formatExpenseDate } from "@/lib/date";
 import { formatMoney } from "@/lib/money";
 import type { ExpenseFilters } from "@/types/models";
 
@@ -87,21 +88,22 @@ export function GroupDetailPage() {
         )}
       </Card>
 
-      <div className="flex gap-2">
-        <Link to={`/groups/${groupId}/expenses/new`} className="flex-1">
-          <Button block>
-            <Plus size={16} aria-hidden />
-            Add expense
-          </Button>
+      {/* Horizontal scrollable action chips and view toggle */}
+      <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 no-scrollbar">
+        <Link
+          to={`/groups/${groupId}/expenses/new`}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700 active:scale-95"
+        >
+          <Plus size={14} aria-hidden />
+          Add expense
         </Link>
-        <Link to={`/groups/${groupId}/settle`} className="flex-1">
-          <Button block variant="secondary">
-            Settle up
-          </Button>
+        <Link
+          to={`/groups/${groupId}/settle`}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 bg-card px-3.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 active:scale-95"
+        >
+          Settle up
         </Link>
-      </div>
-
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+        <div className="h-4 w-px bg-slate-200 shrink-0" aria-hidden />
         {(["expenses", "balances"] as Tab[]).map((value) => (
           <button
             key={value}
@@ -109,8 +111,10 @@ export function GroupDetailPage() {
             aria-pressed={tab === value}
             onClick={() => setTab(value)}
             className={clsx(
-              "flex-1 rounded-md py-2 text-sm font-medium capitalize transition",
-              tab === value ? "bg-card text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-800"
+              "inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-xs font-medium capitalize transition active:scale-95",
+              tab === value
+                ? "bg-slate-800 text-white shadow-sm"
+                : "border border-slate-300 bg-card text-slate-600 hover:bg-slate-50"
             )}
           >
             {value}
@@ -154,7 +158,7 @@ export function GroupDetailPage() {
                   type="date"
                   value={filters.from ?? ""}
                   onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value || null }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
                 />
               </label>
               <label className="block">
@@ -163,7 +167,7 @@ export function GroupDetailPage() {
                   type="date"
                   value={filters.to ?? ""}
                   onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value || null }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
                 />
               </label>
             </div>
@@ -191,35 +195,48 @@ export function GroupDetailPage() {
               const payer = expense.payers[0];
               return (
                 <li key={expense.id}>
-                  <Card className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
-                      {expense.category?.icon ?? "🧾"}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-slate-900">{expense.description}</p>
-                      <p className="truncate text-xs text-slate-500">
-                        {payer ? `${nameFor(payer.user_id)} paid` : "Paid"} ·{" "}
-                        {new Date(expense.expense_date).toLocaleDateString()}
-                        {expense.category ? ` · ${expense.category.name}` : ""}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium tabular-nums text-slate-900">
-                        {formatMoney(expense.total_amount_minor, currency)}
-                      </p>
-                      <p className="text-xs tabular-nums text-slate-500">
-                        your share {formatMoney(myShare, currency)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${expense.description}`}
-                      onClick={() => deleteExpense.mutate(expense.id)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} aria-hidden />
-                    </button>
-                  </Card>
+                  <Link
+                    to={`/groups/${groupId}/expenses/${expense.id}/edit`}
+                    className="block group focus:outline-none"
+                  >
+                    <Card className="flex items-center gap-3 transition-colors group-hover:border-slate-300 group-hover:bg-slate-100/50">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
+                        {expense.category?.icon ?? "🧾"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-slate-900 group-hover:text-brand-700 transition-colors">
+                          {expense.description}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          {payer ? `${nameFor(payer.user_id)} paid` : "Paid"} ·{" "}
+                          {formatExpenseDate(expense.expense_date)}
+                          {expense.category ? ` · ${expense.category.name}` : ""}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium tabular-nums text-slate-900">
+                          {formatMoney(expense.total_amount_minor, currency)}
+                        </p>
+                        <p className="text-xs tabular-nums text-slate-500">
+                          your share {formatMoney(myShare, currency)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${expense.description}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (window.confirm(`Delete "${expense.description}"?`)) {
+                            deleteExpense.mutate(expense.id);
+                          }
+                        }}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 size={16} aria-hidden />
+                      </button>
+                    </Card>
+                  </Link>
                 </li>
               );
             })}

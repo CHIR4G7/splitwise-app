@@ -8,6 +8,7 @@ import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { GroupDetailPage } from "@/pages/GroupDetailPage";
 import { GroupSettingsPage } from "@/pages/GroupSettingsPage";
 import { AddExpensePage } from "@/pages/AddExpensePage";
+import { EditExpensePage } from "@/pages/EditExpensePage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { DevChartsPage } from "@/pages/DevChartsPage";
 import { GroupsPage } from "@/pages/GroupsPage";
@@ -61,6 +62,7 @@ export function App() {
               <Route path="/groups/:groupId" element={<GroupDetailPage />} />
               <Route path="/groups/:groupId/settings" element={<GroupSettingsPage />} />
               <Route path="/groups/:groupId/expenses/new" element={<AddExpensePage />} />
+              <Route path="/groups/:groupId/expenses/:expenseId/edit" element={<EditExpensePage />} />
               <Route path="/groups/:groupId/settle" element={<SettleUpPage />} />
               <Route path="/insights" element={<InsightsPage />} />
               <Route path="/profile" element={<ProfilePage />} />

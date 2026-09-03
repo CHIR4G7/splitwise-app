@@ -86,6 +86,24 @@ export function useExpenses(groupId: string | undefined, filters: ExpenseFilters
   });
 }
 
+export function useExpense(groupId: string | undefined, expenseId: string | undefined) {
+  return useQuery({
+    queryKey: ["expense", groupId, expenseId],
+    enabled: Boolean(groupId && expenseId),
+    queryFn: async (): Promise<Expense | null> => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select(EXPENSE_COLUMNS)
+        .eq("group_id", groupId!)
+        .eq("id", expenseId!)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as unknown as Expense) ?? null;
+    }
+  });
+}
+
 export function useCreateExpense(groupId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -97,6 +115,7 @@ export function useCreateExpense(groupId: string) {
       expenseDate: string;
       payers: ExpensePayer[];
       shares: ExpenseShare[];
+      receiptUrl?: string | null;
     }) => {
       const { data, error } = await supabase.rpc("create_expense", {
         p_group_id: groupId,
@@ -106,7 +125,40 @@ export function useCreateExpense(groupId: string) {
         p_payers: input.payers,
         p_shares: input.shares,
         p_category_id: input.categoryId,
-        p_expense_date: input.expenseDate
+        p_expense_date: input.expenseDate,
+        p_receipt_url: input.receiptUrl ?? null
+      });
+      if (error) throw error;
+      return data as Expense;
+    },
+    onSuccess: () => invalidateGroupMoney(queryClient, groupId)
+  });
+}
+
+export function useUpdateExpense(groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      expenseId: string;
+      description: string;
+      totalMinor: number;
+      splitMethod: SplitMethod;
+      categoryId: string | null;
+      expenseDate: string;
+      payers: ExpensePayer[];
+      shares: ExpenseShare[];
+      receiptUrl?: string | null;
+    }) => {
+      const { data, error } = await supabase.rpc("update_expense", {
+        p_expense_id: input.expenseId,
+        p_description: input.description,
+        p_total_amount_minor: input.totalMinor,
+        p_split_method: input.splitMethod,
+        p_payers: input.payers,
+        p_shares: input.shares,
+        p_category_id: input.categoryId,
+        p_expense_date: input.expenseDate,
+        p_receipt_url: input.receiptUrl ?? null
       });
       if (error) throw error;
       return data as Expense;
@@ -186,7 +238,9 @@ export function useSettlements(groupId: string | undefined) {
 /** Any money write invalidates the expense list and both balance views together. */
 function invalidateGroupMoney(queryClient: ReturnType<typeof useQueryClient>, groupId: string) {
   queryClient.invalidateQueries({ queryKey: ["expenses", groupId] });
+  queryClient.invalidateQueries({ queryKey: ["expense", groupId] });
   queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
   queryClient.invalidateQueries({ queryKey: ["simplified-debts", groupId] });
   queryClient.invalidateQueries({ queryKey: ["settlements", groupId] });
+  queryClient.invalidateQueries({ queryKey: ["personal-insights"] });
 }

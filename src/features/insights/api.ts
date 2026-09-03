@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { getLocalDateString } from "@/lib/date";
 import type { PersonalInsights } from "@/types/models";
 
 export function usePersonalInsights(from: string, to: string) {
@@ -20,7 +21,7 @@ export type RangePreset = {
   range: () => { from: string; to: string };
 };
 
-const iso = (date: Date) => date.toISOString().slice(0, 10);
+const localDate = (date: Date) => getLocalDateString(date);
 
 export const RANGE_PRESETS: RangePreset[] = [
   {
@@ -28,7 +29,7 @@ export const RANGE_PRESETS: RangePreset[] = [
     label: "This month",
     range: () => {
       const now = new Date();
-      return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: iso(now) };
+      return { from: localDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: localDate(now) };
     }
   },
   {
@@ -37,8 +38,8 @@ export const RANGE_PRESETS: RangePreset[] = [
     range: () => {
       const now = new Date();
       return {
-        from: iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
-        to: iso(new Date(now.getFullYear(), now.getMonth(), 0))
+        from: localDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+        to: localDate(new Date(now.getFullYear(), now.getMonth(), 0))
       };
     }
   },
@@ -47,7 +48,7 @@ export const RANGE_PRESETS: RangePreset[] = [
     label: "Last 3 months",
     range: () => {
       const now = new Date();
-      return { from: iso(new Date(now.getFullYear(), now.getMonth() - 2, 1)), to: iso(now) };
+      return { from: localDate(new Date(now.getFullYear(), now.getMonth() - 2, 1)), to: localDate(now) };
     }
   },
   {
@@ -55,7 +56,7 @@ export const RANGE_PRESETS: RangePreset[] = [
     label: "This year",
     range: () => {
       const now = new Date();
-      return { from: iso(new Date(now.getFullYear(), 0, 1)), to: iso(now) };
+      return { from: localDate(new Date(now.getFullYear(), 0, 1)), to: localDate(now) };
     }
   }
 ];

@@ -11,10 +11,10 @@ const tabs = [
 export function AppLayout() {
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-24 pt-6">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pt-6" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-card/95 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-card/95 backdrop-blur" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <ul className="mx-auto flex max-w-2xl">
           {tabs.map(({ to, label, icon: Icon }) => (
             <li key={to} className="flex-1">

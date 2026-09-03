@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { MonthlyBars, RankedBars, StatTile } from "@/components/charts";
 import { Alert, Card, EmptyState, Spinner } from "@/components/ui";
 import { RANGE_PRESETS, usePersonalInsights } from "@/features/insights/api";
+import { formatExpenseDate } from "@/lib/date";
 import { formatMoney } from "@/lib/money";
 
 const initialRange = RANGE_PRESETS[2].range();
@@ -176,7 +177,7 @@ export function InsightsPage() {
                         <p className="truncate text-sm text-slate-800">{expense.description}</p>
                         <p className="truncate text-xs text-slate-500">
                           {expense.group_icon} {expense.group_name} ·{" "}
-                          {new Date(expense.expense_date).toLocaleDateString()}
+                          {formatExpenseDate(expense.expense_date)}
                         </p>
                       </div>
                       <span className="text-sm font-medium tabular-nums text-slate-900">

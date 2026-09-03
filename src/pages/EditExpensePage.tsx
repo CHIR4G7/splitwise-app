@@ -1,12 +1,12 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Alert, Button, Card, Field, SelectField, Spinner } from "@/components/ui";
-import { useCategories, useCreateExpense } from "@/features/expenses/api";
+import { useCategories, useDeleteExpense, useExpense, useUpdateExpense } from "@/features/expenses/api";
 import { useGroup, useGroupMembers } from "@/features/groups/api";
 import { useAuth } from "@/lib/auth";
 import { getLocalDateString, getYesterdayDateString } from "@/lib/date";
-import { computeShares, formatMoney, reconciliationError, toMinor } from "@/lib/money";
+import { computeShares, formatMoney, reconciliationError, toMajor, toMinor } from "@/lib/money";
 import type { SplitMethod } from "@/types/models";
 
 const METHODS: { value: SplitMethod; label: string; hint: string }[] = [
@@ -16,15 +16,17 @@ const METHODS: { value: SplitMethod; label: string; hint: string }[] = [
   { value: "shares", label: "Shares", hint: "Relative weights, e.g. 2 : 1 : 1." }
 ];
 
-export function AddExpensePage() {
-  const { groupId } = useParams<{ groupId: string }>();
+export function EditExpensePage() {
+  const { groupId, expenseId } = useParams<{ groupId: string; expenseId: string }>();
   const { session } = useAuth();
   const navigate = useNavigate();
 
   const group = useGroup(groupId);
   const members = useGroupMembers(groupId);
   const categories = useCategories(groupId);
-  const createExpense = useCreateExpense(groupId!);
+  const expenseQuery = useExpense(groupId, expenseId);
+  const updateExpense = useUpdateExpense(groupId!);
+  const deleteExpense = useDeleteExpense(groupId!);
 
   const currency = group.data?.default_currency ?? "INR";
   const myId = session?.user.id;
@@ -41,15 +43,40 @@ export function AddExpensePage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const roster = useMemo(() => members.data ?? [], [members.data]);
+  const expense = expenseQuery.data;
 
-  // Default to everyone in, paid by me, once the roster arrives.
+  // Initialize form when expense data loads
   useEffect(() => {
-    if (roster.length === 0) return;
-    setSelected((prev) => (Object.keys(prev).length > 0 ? prev : Object.fromEntries(roster.map((m) => [m.user_id, true]))));
-    setPaidBy((prev) => prev || myId || roster[0].user_id);
-  }, [roster, myId]);
+    if (!expense || isInitialized) return;
+
+    setDescription(expense.description);
+    setAmount(toMajor(expense.total_amount_minor).toString());
+    setCategoryId(expense.category_id ?? "");
+    setExpenseDate(expense.expense_date?.slice(0, 10) ?? getLocalDateString());
+    setPaidBy(expense.payers[0]?.user_id ?? myId ?? "");
+    setMethod(expense.split_method);
+
+    const selectedMap: Record<string, boolean> = {};
+    const inputsMap: Record<string, string> = {};
+
+    for (const share of expense.shares) {
+      selectedMap[share.user_id] = true;
+      if (expense.split_method === "exact") {
+        inputsMap[share.user_id] = toMajor(share.share_amount_minor).toString();
+      } else if (expense.split_method === "percent" && share.share_percent != null) {
+        inputsMap[share.user_id] = share.share_percent.toString();
+      } else if (expense.split_method === "shares" && share.share_units != null) {
+        inputsMap[share.user_id] = share.share_units.toString();
+      }
+    }
+
+    setSelected(selectedMap);
+    setInputs(inputsMap);
+    setIsInitialized(true);
+  }, [expense, isInitialized, myId]);
 
   const participants = roster.filter((m) => selected[m.user_id]);
   const totalMinor = toMinor(amount || "0");
@@ -87,7 +114,8 @@ export function AddExpensePage() {
     const finalDate = expenseDate.trim() || getLocalDateString();
 
     try {
-      await createExpense.mutateAsync({
+      await updateExpense.mutateAsync({
+        expenseId: expenseId!,
         description,
         totalMinor,
         splitMethod: method,
@@ -103,20 +131,55 @@ export function AddExpensePage() {
       });
       navigate(`/groups/${groupId}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not save this expense.");
+      setError(cause instanceof Error ? cause.message : "Could not update this expense.");
     }
   }
 
-  if (members.isLoading || group.isLoading) return <Spinner label="Loading group" />;
+  async function handleDelete() {
+    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+    try {
+      await deleteExpense.mutateAsync(expenseId!);
+      navigate(`/groups/${groupId}`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete this expense.");
+    }
+  }
+
+  if (members.isLoading || group.isLoading || expenseQuery.isLoading) {
+    return <Spinner label="Loading expense" />;
+  }
+
+  if (expenseQuery.isError || (!expenseQuery.isLoading && !expense)) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Alert>This expense was not found or could not be loaded.</Alert>
+        <Link to={`/groups/${groupId}`}>
+          <Button variant="secondary">Back to group</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 pb-8">
-      <Link to={`/groups/${groupId}`} className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
-        <ChevronLeft size={16} aria-hidden />
-        {group.data?.name ?? "Back"}
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link to={`/groups/${groupId}`} className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
+          <ChevronLeft size={16} aria-hidden />
+          {group.data?.name ?? "Back"}
+        </Link>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleteExpense.isPending}
+          aria-label="Delete expense"
+          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm text-red-600 hover:bg-red-50 transition"
+        >
+          <Trash2 size={16} aria-hidden />
+          Delete
+        </button>
+      </div>
 
-      <h1 className="text-xl font-semibold text-slate-900">Add an expense</h1>
+      <h1 className="text-xl font-semibold text-slate-900">Edit expense</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && <Alert>{error}</Alert>}
@@ -238,12 +301,12 @@ export function AddExpensePage() {
                 <li key={member.user_id} className="flex items-center gap-3 py-2.5">
                   <input
                     type="checkbox"
-                    id={`member-${member.user_id}`}
+                    id={`edit-member-${member.user_id}`}
                     checked={isIn}
                     onChange={(e) => setSelected((prev) => ({ ...prev, [member.user_id]: e.target.checked }))}
                     className="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   />
-                  <label htmlFor={`member-${member.user_id}`} className="min-w-0 flex-1 truncate text-sm text-slate-800 cursor-pointer py-1">
+                  <label htmlFor={`edit-member-${member.user_id}`} className="min-w-0 flex-1 truncate text-sm text-slate-800 cursor-pointer py-1">
                     {member.user_id === myId ? "You" : member.profile.display_name}
                   </label>
 
@@ -285,9 +348,16 @@ export function AddExpensePage() {
           )}
         </Card>
 
-        <Button type="submit" disabled={createExpense.isPending || Boolean(validation)}>
-          {createExpense.isPending ? "Saving…" : "Save expense"}
-        </Button>
+        <div className="flex gap-3">
+          <Button type="submit" block disabled={updateExpense.isPending || Boolean(validation)}>
+            {updateExpense.isPending ? "Saving…" : "Update expense"}
+          </Button>
+          <Link to={`/groups/${groupId}`}>
+            <Button type="button" variant="ghost">
+              Cancel
+            </Button>
+          </Link>
+        </div>
       </form>
     </div>
   );
